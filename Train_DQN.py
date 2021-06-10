@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import random
 import numpy as np
 from statistics import mean
-
+from Buffer import ReplayBuffer
 from Environment import CreateMario
 from Network import QNet
 
@@ -26,41 +26,6 @@ history_path           = './Train_Historys/Mario_DQN'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-class ReplayBuffer:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.Buffer = []
-        self.position = 0
-
-    def push(self, transition):
-        """
-        push transition data to Beffer
-
-        input:
-          transition -- list of [s, a, r, s_prime, t]
-        """
-        if len(self.Buffer) < self.capacity:
-            self.Buffer.append(None)
-        self.Buffer[self.position] = transition
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size):
-        mini_batch = random.sample(self.Buffer, batch_size)
-
-        s_batch, a_batch, r_batch, s_prime_batch, t_batch = [], [], [], [], []
-        for transition in mini_batch:
-            s, a, r, s_prime, t = transition
-
-            s_batch.append(s)
-            a_batch.append([a])
-            r_batch.append([r])
-            s_prime_batch.append(s_prime)
-            t_batch.append([t])
-        
-        return s_batch, a_batch, r_batch, s_prime_batch, t_batch
-
-    def size(self):
-        return len(self.Buffer)
 
 def train(optimizer, behaviourNet, targetNet, s_batch, a_batch, r_batch, s_prime_batch, done_batch):
         s_batch = torch.FloatTensor(s_batch).to(device)

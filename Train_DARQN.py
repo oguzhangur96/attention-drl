@@ -5,7 +5,7 @@ import time
 import random
 import numpy as np
 from statistics import mean
-
+from Buffer import ReplayBuffer
 from Environment import CreateMario
 from Network import QNet_DARQN
 
@@ -27,41 +27,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
 
-class ReplayBuffer:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.Buffer = []
-        self.position = 0
-
-    def push(self, transition):
-        """
-        push transition data to Beffer
-
-        input:
-          transition -- list of [s, a, r, t]
-        """
-        if len(self.Buffer) < self.capacity:
-            self.Buffer.append(None)
-        self.Buffer[self.position] = transition
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size):
-        random_idx = random.randint(0, len(self.Buffer) - batch_size)
-        mini_batch = self.Buffer[random_idx: random_idx + batch_size]
-
-        s_batch, a_batch, r_batch, t_batch = [], [], [], []
-        for transition in mini_batch:
-            s, a, r, t = transition
-
-            s_batch.append(s)
-            a_batch.append([a])
-            r_batch.append([r])
-            t_batch.append([t])
-
-        return s_batch, a_batch, r_batch, t_batch
-
-    def size(self):
-        return len(self.Buffer)
 
 
 def init_hidden():
@@ -129,7 +94,7 @@ def main():
     start = time.time()
     print("Train start")
     while step < Train_max_step:
-        env.render()
+        # env.render()
         epsilon = max(0.1, 1.0 - (0.9 / final_exploration_step) * step)
 
         action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
