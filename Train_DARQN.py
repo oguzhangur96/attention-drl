@@ -98,16 +98,14 @@ def main():
     while step < Train_max_step:
         # env.render()
         epsilon = max(0.1, 1.0 - (0.9 / final_exploration_step) * step)
-
         action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
 
         # epsilon greedy
         coin = random.random()
         if coin < epsilon:
-            action = random.randrange(7)
+            action = random.randrange(12)
         else:
             action = action_value.argmax().item()
-
         next_state, reward, done, info = env.step(action)
         buffer.push((state, action, reward, 1 - done))
 
@@ -146,6 +144,7 @@ def main():
                 state, reward, done, info = env.step(action)
                 episodic_reward = episodic_reward + reward
                 h, c = (next_h, next_c)
+            h, c = init_hidden()
             state = env.reset()
 
             behaviourNet.train()

@@ -104,7 +104,7 @@ def main():
         # epsilon greedy
         coin = random.random()
         if coin < epsilon:
-            action = random.randrange(7)
+            action = random.randrange(12)
         else:
             action = action_value.argmax().item()
 
@@ -146,6 +146,7 @@ def main():
                 state, reward, done, info = env.step(action)
                 episodic_reward = episodic_reward + reward
                 h, c = (next_h, next_c)
+            h, c = init_hidden()
             state = env.reset()
 
             behaviourNet.train()
