@@ -10,18 +10,19 @@ from Environment import CreateMario
 from Network import QNet_DARQN
 
 # settings
-Train_max_step = 4000000
+Train_max_step = 2000000
 learning_rate = 2e-4
 gamma = 0.99
-buffer_capacity = 500000
-batch_size = 32
+buffer_capacity = 250000
+batch_size = 64
 replay_start_size = 50000
 final_exploration_step = 1000000
 update_interval = 10000  # target net
-update_frequency = 4  # the number of actions selected by the agent between successive SGD updates
+update_frequency = 8  # the number of actions selected by the agent between successive SGD updates
 save_interval = 10000
 model_path = './Models/Mario_DARQN.model'
 history_path = './Train_Historys/Mario_DARQN'
+eval_history_path = './Train_Historys/eval_Mario_DARQN'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -84,6 +85,7 @@ def main():
 
     score_history = []
     train_history = []
+    eval_history = []
     # train_history = np.load(history_path+'.npy').tolist()
 
     step = 0
@@ -102,7 +104,7 @@ def main():
         # epsilon greedy
         coin = random.random()
         if coin < epsilon:
-            action = random.randrange(5)
+            action = random.randrange(7)
         else:
             action = action_value.argmax().item()
 
@@ -132,15 +134,37 @@ def main():
             targetNet.load_state_dict(behaviourNet.state_dict())
 
         if step > 0 and step % save_interval == 0:
+            behaviourNet.eval()
+            state = env.reset()
+            done = False
+            # reset environment and set episodic reward to 0 for each episode start
+            episodic_reward = 0
+            h, c = init_hidden()
+            while not done:
+                # take action get next state, rewards and terminal status
+                action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
+                state, reward, done, info = env.step(action)
+                episodic_reward = episodic_reward + reward
+                h, c = (next_h, next_c)
+            state = env.reset()
+
+            behaviourNet.train()
+
             train_history.append(mean(score_history))
+            eval_history.append(episodic_reward)
+
             torch.save(behaviourNet.state_dict(), model_path)
+
             np.save(history_path, np.array(train_history))
+            np.save(eval_history_path, np.array(eval_history))
+
             end = time.time()
             print(
-                f"Step No: {step}, Hundred episode average: {mean(score_history)}, epsilon: {epsilon}, time = {end - start} ")
+                f"Step No: {step}, Train average: {mean(score_history)}, Eval Average: {episodic_reward}, epsilon: {epsilon}, time = {end - start} ")
             start = end
     torch.save(behaviourNet.state_dict(), model_path)
     np.save(history_path, np.array(train_history))
+    np.save(eval_history_path, np.array(eval_history))
     print("Train end, avg_score of last 100 episode : {}".format(mean(score_history)))
 
 
