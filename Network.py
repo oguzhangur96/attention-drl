@@ -293,8 +293,8 @@ class SpatialGate(nn.Module):
         self.compress = ChannelPool()
         self.spatial = BasicConv(2, 1, kernel_size, stride=1, padding=(kernel_size - 1) // 2, relu=False)
         # buraya bizim attentiona giren conv çıktısını vericez.
-        self.lstm = nn.LSTMCell(7056, 512)
-        self.Q = nn.Linear(512, 5)
+        self.lstm = nn.LSTMCell(729, 512)
+        self.Q = nn.Linear(512, 12)
         # forwarda da lstm kısmını vericez.
 
     def forward(self, x, hidden):
@@ -304,7 +304,7 @@ class SpatialGate(nn.Module):
 
         out = x_out * scale
         lstm_input = torch.sum(out, 0)  # 64
-        lstm_input = lstm_input.reshape((1, 7056))  # 1 ,64
+        lstm_input = lstm_input.reshape((1, 729))  # 1 ,64
         # LSTM
         h, c = self.lstm(lstm_input, hidden)
         q = self.Q(h)
@@ -315,7 +315,7 @@ class SpatialGate(nn.Module):
 class Qnet_DCBAMRQN(nn.Module):
     def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max']):
         super(Qnet_DCBAMRQN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=1, stride=1)
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=5, stride=3)
         self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types)
         self.SpatialGate = SpatialGate()
 

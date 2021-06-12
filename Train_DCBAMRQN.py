@@ -103,7 +103,7 @@ def main():
         # epsilon greedy
         coin = random.random()
         if coin < epsilon:
-            action = random.randrange(5)
+            action = random.randrange(12)
         else:
             action = action_value.argmax().item()
         next_state, reward, done, info = env.step(action)
