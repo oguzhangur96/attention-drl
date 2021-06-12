@@ -20,7 +20,7 @@ class QNet(nn.Module):
 
         self.fc = nn.Linear(self.ConvOutSize * self.ConvOutSize * 64, 512)
 
-        self.Q = nn.Linear(512, 12)
+        self.Q = nn.Linear(512, 5)
 
         self.initialize_weights()
     
@@ -60,7 +60,7 @@ class QNet_LSTM(nn.Module):
 
         self.lstm = nn.LSTMCell(self.ConvOutSize * self.ConvOutSize * 64, 512)
 
-        self.Q = nn.Linear(512, 12)
+        self.Q = nn.Linear(512, 5)
 
         self.initialize_weights()
     
@@ -111,7 +111,7 @@ class QNet_DARQN(nn.Module):
 
 
         self.lstm = nn.LSTMCell(64, 64)
-        self.Q = nn.Linear(64, 12)
+        self.Q = nn.Linear(64, 5)
 
         self.initialize_weights()
 

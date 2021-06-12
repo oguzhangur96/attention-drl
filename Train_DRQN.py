@@ -14,7 +14,7 @@ Train_max_step = 2000000
 learning_rate = 2e-4
 gamma = 0.99
 buffer_capacity = 250000
-batch_size = 64
+batch_size = 32
 replay_start_size = 50000
 final_exploration_step = 1000000
 update_interval = 10000  # target net
@@ -104,14 +104,14 @@ def main():
         # epsilon greedy
         coin = random.random()
         if coin < epsilon:
-            action = random.randrange(12)
+            action = random.randrange(5)
         else:
             action = action_value.argmax().item()
 
         next_state, reward, done, info = env.step(action)
-        buffer.push((state, action, reward, 1 - done))
+        buffer.push((state, action, info['score'], 1 - done))
 
-        score += reward
+        score += info['score']
         step += 1
 
         if done:
@@ -134,7 +134,6 @@ def main():
             targetNet.load_state_dict(behaviourNet.state_dict())
 
         if step > 0 and step % save_interval == 0:
-            behaviourNet.eval()
             state = env.reset()
             done = False
             # reset environment and set episodic reward to 0 for each episode start
@@ -143,13 +142,12 @@ def main():
             while not done:
                 # take action get next state, rewards and terminal status
                 action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
-                state, reward, done, info = env.step(action)
-                episodic_reward = episodic_reward + reward
+                state, reward, done, info = env.step(action_value.argmax().item())
+                episodic_reward = episodic_reward + info['score']
                 h, c = (next_h, next_c)
             h, c = init_hidden()
             state = env.reset()
-
-            behaviourNet.train()
+            score = 0
 
             train_history.append(mean(score_history))
             eval_history.append(episodic_reward)

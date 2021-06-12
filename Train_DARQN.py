@@ -14,7 +14,7 @@ Train_max_step = 2000000
 learning_rate = 2e-4
 gamma = 0.99
 buffer_capacity = 250000
-batch_size = 64
+batch_size = 32
 replay_start_size = 50000
 final_exploration_step = 1000000
 update_interval = 10000  # target net
@@ -103,7 +103,7 @@ def main():
         # epsilon greedy
         coin = random.random()
         if coin < epsilon:
-            action = random.randrange(12)
+            action = random.randrange(5)
         else:
             action = action_value.argmax().item()
         next_state, reward, done, info = env.step(action)
@@ -132,7 +132,6 @@ def main():
             targetNet.load_state_dict(behaviourNet.state_dict())
 
         if step > 0 and step % save_interval == 0:
-            behaviourNet.eval()
             state = env.reset()
             done = False
             # reset environment and set episodic reward to 0 for each episode start
@@ -141,13 +140,12 @@ def main():
             while not done:
                 # take action get next state, rewards and terminal status
                 action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
-                state, reward, done, info = env.step(action)
+                state, reward, done, info = env.step(action_value.argmax().item())
                 episodic_reward = episodic_reward + reward
-                h, c = (next_h, next_c)
+                h, c = next_h, next_c
             h, c = init_hidden()
             state = env.reset()
-
-            behaviourNet.train()
+            score = 0
 
             train_history.append(mean(score_history))
             eval_history.append(episodic_reward)
@@ -165,6 +163,28 @@ def main():
     np.save(history_path, np.array(train_history))
     np.save(eval_history_path, np.array(eval_history))
     print("Train end, avg_score of last 100 episode : {}".format(mean(score_history)))
+
+def main_v2():
+    env = CreateMario(stack=False)
+    behaviourNet = QNet_DARQN().to(device)
+    behaviourNet.load_state_dict(torch.load(model_path))
+    state = env.reset()
+    h, c = init_hidden()
+    episodic_reward = 0
+    done = False
+    while not done:
+        # take action get next state, rewards and terminal status
+        action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
+        # print(action_value.argmax().item())
+        print(action_value.argmax().item())
+        state, reward, done, info = env.step(action_value.argmax().item())
+        episodic_reward = episodic_reward + reward
+        h, c = next_h, next_c
+        env.render()
+        # print(h)
+        time.sleep(1/10)
+
+    print(episodic_reward)
 
 
 if __name__ == "__main__":
