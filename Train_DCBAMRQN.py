@@ -166,7 +166,7 @@ def main():
 
 def main_v2():
     env = CreateMario(stack=False)
-    behaviourNet = Qnet_DCBAMRQN().to(device)
+    behaviourNet = Qnet_DCBAMRQN(gate_channels=64).to(device)
     behaviourNet.load_state_dict(torch.load(model_path))
     state = env.reset()
     h, c = init_hidden()
