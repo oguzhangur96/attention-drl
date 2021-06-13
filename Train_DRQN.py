@@ -166,5 +166,26 @@ def main():
     np.save(eval_history_path, np.array(eval_history))
     print("Train end, avg_score of last 100 episode : {}".format(mean(score_history)))
 
+def main_v2():
+    env = CreateMario(stack=False)
+    behaviourNet = QNet_LSTM().to(device)
+    print(sum(p.numel() for p in behaviourNet.parameters() if p.requires_grad))
+    behaviourNet.load_state_dict(torch.load(model_path))
+    state = env.reset()
+    h, c = init_hidden()
+    episodic_reward = 0
+    done = False
+    while not done:
+        # take action get next state, rewards and terminal status
+        action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
+        # print(action_value.argmax().item())
+        state, reward, done, info = env.step(action_value.argmax().item())
+        episodic_reward = episodic_reward + reward
+        h, c = next_h, next_c
+        env.render()
+        time.sleep(1/10)
+
+    print(episodic_reward)
+
 if __name__ == "__main__":
     main()

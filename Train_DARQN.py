@@ -167,6 +167,7 @@ def main():
 def main_v2():
     env = CreateMario(stack=False)
     behaviourNet = QNet_DARQN().to(device)
+    print(sum(p.numel() for p in behaviourNet.parameters() if p.requires_grad))
     behaviourNet.load_state_dict(torch.load(model_path))
     state = env.reset()
     h, c = init_hidden()
@@ -176,7 +177,6 @@ def main_v2():
         # take action get next state, rewards and terminal status
         action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
         # print(action_value.argmax().item())
-        print(action_value.argmax().item())
         state, reward, done, info = env.step(action_value.argmax().item())
         episodic_reward = episodic_reward + reward
         h, c = next_h, next_c
