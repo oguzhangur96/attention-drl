@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import time
 import random
-import pickle
 import numpy as np
 from statistics import mean
 from Buffer import ReplayBuffer
@@ -22,7 +21,6 @@ update_interval        = 10000 # target net
 update_frequency       = 4  # the number of actions selected by the agent between successive SGD updates
 save_interval          = 10000
 model_path = './Models/Breakout_DRQN.model'
-buffer_path = './Models/Breakout_DRQN.buffer'
 history_path = './Train_Historys/Breakout_DRQN'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -89,8 +87,6 @@ def main():
     state = env.reset()
     h, c = init_hidden()
 
-    start = time.time()
-
     print("Train start")
     while step < Train_max_step:
         # env.render()
@@ -133,8 +129,7 @@ def main():
             torch.save(behaviourNet.state_dict(), model_path)
             np.save(history_path, np.array(train_history))
 
-            print(
-                f"Step No: {step}, Train average: {mean(score_history)}, epsilon: {epsilon}")
+            print(f"Step No: {step}, Train average: {mean(score_history)}, epsilon: {epsilon}")
 
     torch.save(behaviourNet.state_dict(), model_path)
     np.save(history_path, np.array(train_history))

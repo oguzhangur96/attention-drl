@@ -1,9 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import time
 import random
-import pickle
 import argparse
 import numpy as np
 from statistics import mean
@@ -52,7 +50,7 @@ def train(optimizer, behaviourNet, targetNet, s_batch, a_batch, r_batch, done_ba
     ht, ct = init_hidden()
     Q_batch = []
     target_Q_batch = []
-    # start = time.time()
+
     for state, done in zip(s_batch, done_batch):
         Q, (hb, cb) = behaviourNet(state.unsqueeze(0), (hb, cb))
         target_Q, (ht, ct) = targetNet(state.unsqueeze(0), (ht, ct))
@@ -81,6 +79,7 @@ def train(optimizer, behaviourNet, targetNet, s_batch, a_batch, r_batch, done_ba
 def main(args):
     env = CreateBreakout(stack=False)
     buffer = ReplayBuffer(args.buffer_capacity)
+    
     behaviourNet = QNet_DARQN().to(device)
     targetNet = QNet_DARQN().to(device)
     targetNet.load_state_dict(behaviourNet.state_dict())
@@ -98,7 +97,6 @@ def main(args):
 
     state = env.reset()
     h, c = init_hidden()
-    start = time.time()
 
     print("Train start")
     while step < args.train_max_step:
