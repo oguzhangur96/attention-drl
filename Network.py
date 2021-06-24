@@ -111,7 +111,7 @@ class QNet_DARQN(nn.Module):
 
 
         self.lstm = nn.LSTMCell(64, 64)
-        self.Q = nn.Linear(64, 5)
+        self.Q = nn.Linear(64, 4)
 
         self.initialize_weights()
 
@@ -151,9 +151,8 @@ class QNet_DARQN(nn.Module):
         x = x.reshape((64,49)) # 64 ,49
         x = x.T # 49 ,64
         # print(f"x_1 size = {x.size()}") # 49, 64
-        x = self.attention_linear_x(x) #(49,64) * (64) + (64) = (49,64)
         # print(f"x_2 size = {x.size()}")
-        z = F.tanh(x+h_att) # (49,64) + (49,64) = (49,64)
+        z = F.tanh(self.attention_linear_x(x)+h_att) # (49,64) + (49,64) = (49,64)
         z = self.attention_linear_z(z) # (49,64)
         z = F.softmax(z) # (49,64)
         out = z*x # (49,64)

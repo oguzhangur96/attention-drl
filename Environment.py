@@ -3,16 +3,11 @@ import cv2
 import numpy as np
 import gym
 from gym import Wrapper
-import gym_super_mario_bros
-from nes_py.wrappers import JoypadSpace
-import gym_super_mario_bros
-from gym_super_mario_bros.actions import COMPLEX_MOVEMENT
 
 
-
-class CustomMario(Wrapper):
+class CustomBreakout(Wrapper):
     def __init__(self, env, size=84, skip=4):
-        super(CustomMario, self).__init__(env)
+        super(CustomBreakout, self).__init__(env)
         self.skip = skip
         self.size = size
 
@@ -39,9 +34,9 @@ class CustomMario(Wrapper):
         return state
 
 
-class CustomMario_stack(Wrapper):
+class CustomBreakout_stack(Wrapper):
     def __init__(self, env, size=84, skip=4):
-        super(CustomMario_stack, self).__init__(env)
+        super(CustomBreakout_stack, self).__init__(env)
         self.skip = skip
         self.size = size
         self.history = []
@@ -74,19 +69,18 @@ class CustomMario_stack(Wrapper):
         return np.stack(self.history)
 
 
-def CreateMario(stack=True):
-    env = gym_super_mario_bros.make('SuperMarioBros-v0')
-    env = JoypadSpace(env, COMPLEX_MOVEMENT)
+def CreateBreakout(stack=True):
+    env = gym.make('Breakout-v0')
     if stack:
-        env = CustomMario_stack(env)
+        env = CustomBreakout_stack(env)
     else:
-        env = CustomMario(env)
+        env = CustomBreakout(env)
     return env
 
 
-class MultipleMario:
-    def __init__(self, N, stack=False):
-        self.envs = [CreateMario(stack) for _ in range(N)]
+class MultipleBreakout:
+    def __init__(self, N, stack=True):
+        self.envs = [CreateBreakout(stack) for _ in range(N)]
 
     def reset(self):
         obs = []
