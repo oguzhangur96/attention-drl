@@ -12,12 +12,12 @@ from Network import QNet_DARQN
 
 # settings
 Train_max_step         = 4000000
-learning_rate          = 3e-4
+learning_rate          = 1e-4
 gamma                  = 0.99
-buffer_capacity        = 250000
+buffer_capacity        = 500000
 batch_size             = 32
 replay_start_size      = 50000
-final_exploration_step = 1000000
+final_exploration_step = 100000
 update_interval        = 10000 # target net
 update_frequency       = 4  # the number of actions selected by the agent between successive SGD updates
 save_interval          = 10000
@@ -25,6 +25,9 @@ model_path = './Models/Breakout_DARQN.model'
 buffer_path = './Models/Breakout_DARQN.buffer'
 history_path = './Train_Historys/Breakout_DARQN'
 eval_history_path = './Train_Historys/eval_Breakout_DARQN'
+
+epsilon_start = 1
+epsilon_min = 0.1
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -78,8 +81,9 @@ def train(optimizer, behaviourNet, targetNet, s_batch, a_batch, r_batch, done_ba
 
 def main():
     env = CreateBreakout(stack=False)
-    buffer = ReplayBuffer(buffer_capacity)
+    buffer = pickle.load(buffer_path)
     behaviourNet = QNet_DARQN().to(device)
+    behaviourNet.load_state_dict(torch.load(model_path))
     # behaviourNet.load_state_dict(torch.load(model_path))
     targetNet = QNet_DARQN().to(device)
     targetNet.load_state_dict(behaviourNet.state_dict())
@@ -99,7 +103,7 @@ def main():
     print("Train start")
     while step < Train_max_step:
         # env.render()
-        epsilon = max(0.1, 1.0 - (0.9 / final_exploration_step) * step)
+        epsilon = max(epsilon_min, epsilon_start - ((epsilon_start-epsilon_min) / final_exploration_step) * step)
         action_value, (next_h, next_c) = behaviourNet.forward(torch.FloatTensor([state]).to(device), (h, c))
 
         # epsilon greedy
@@ -162,8 +166,6 @@ def main():
             print(
                 f"Step No: {step}, Train average: {mean(score_history)}, Eval Average: {episodic_reward}, epsilon: {epsilon}, time = {end - start} ")
             start = end
-    with open(buffer_path, 'wb') as f:
-        pickle.dump(buffer, f)
     torch.save(behaviourNet.state_dict(), model_path)
     np.save(history_path, np.array(train_history))
     np.save(eval_history_path, np.array(eval_history))
