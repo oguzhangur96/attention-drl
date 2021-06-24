@@ -103,7 +103,7 @@ class QNet_DARQN(nn.Module):
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
 
         self.ConvOutSize = self.get_conv_out_size()
-        self.attention_h = nn.Linear(64,64)
+        self.attention_h = nn.Linear(64,64,bias=False)
         # self.attention_xW = Variable(torch.randn((64),requires_grad=True)).to("cuda")
         # self.attention_xb = Variable(torch.randn((64), requires_grad=True)).to("cuda")
         self.attention_linear_x = nn.Linear(64,64)
