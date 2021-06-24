@@ -61,7 +61,10 @@ class QNet_LSTM(nn.Module):
 
         self.lstm = nn.LSTMCell(self.ConvOutSize * self.ConvOutSize * 64, 512)
 
-        self.Q = nn.Linear(512, 5)
+        self.Q = nn.Sequential(nn.Linear(512, 64),
+                                nn.ReLU(64),
+                                nn.Linear(64,4)
+                                )
 
         self.initialize_weights()
     
@@ -107,8 +110,7 @@ class QNet_DARQN(nn.Module):
                                         nn.ReLU(128),
                                         nn.Linear(128,64, bias=False)
                                         )
-        # self.attention_xW = Variable(torch.randn((64),requires_grad=True)).to("cuda")
-        # self.attention_xb = Variable(torch.randn((64), requires_grad=True)).to("cuda")
+
         self.attention_linear_x = nn.Sequential(nn.Linear(64,64),
                                                 nn.ReLU(64),
                                                 nn.Linear(64,64)
@@ -130,43 +132,16 @@ class QNet_DARQN(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        # print(x.size())
-        # x = x.view(-1, self.ConvOutSize * self.ConvOutSize * 64)
 
-
-        # attention
-        # x = self.attention_linear_one(x)
-        # temp = self.attention_W(hidden[0])
-        # z = x.add(temp)
-        # z = self.attention_linear_two(z)
-        # z = F.softmax(z)
-        # z = x*z
         x = x.view(-1, 64, self.ConvOutSize * self.ConvOutSize) # 1, 64, 49,
-        # k = torch.chunk(x,49,2) # (1,64) * 49
-        # for i,chunk in enumerate(k):
-        #     chunk = chunk.reshape((1,64))
-        #     # h_att = torch.matmul(hidden[0],self.attention_hW) + self.attention_hb
-        #     h_att = self.attention_h(hidden[0]) #64
-        #     x_att = self.attention_linear_x(chunk)
-        #     z = F.tanh(h_att + x_att)
-        #     z = self.attention_linear_z(z)
-        #     z = F.softmax(z)
-        #     if i == 0:
-        #         out = z*chunk
-        #     elif i > 0:
-        #         out = torch.cat((out,z*chunk))
         h_att = self.attention_h(hidden[0])
-        # print(f"h_att size = {h_att.size()}")
         x = x.reshape((64,49)) # 64 ,49
         x = x.T # 49 ,64
         x_att = self.attention_linear_x(x)
-        # print(f"x_1 size = {x.size()}") # 49, 64
-        # print(f"x_2 size = {x.size()}")
         z = torch.tanh(x_att+h_att) # (49,64) + (49,64) = (49,64)
         z = self.attention_linear_z(z) # (49,64)
         z = torch.softmax(z, dim=1) # (49,64)
         out = z*x # (49,64)
-        # print(f"out size = {out.size()}")
         lstm_input = torch.sum(out,0) # 64
         lstm_input = lstm_input.reshape((1,64)) # 1 ,64
         #LSTM
