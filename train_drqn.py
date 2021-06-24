@@ -14,7 +14,7 @@ from Network import QNet_LSTM
 Train_max_step         = 4000000
 learning_rate          = 3e-4
 gamma                  = 0.99
-buffer_capacity        = 250000
+buffer_capacity        = 200000
 batch_size             = 32
 replay_start_size      = 50000
 final_exploration_step = 1000000
@@ -27,8 +27,6 @@ history_path = './Train_Historys/Breakout_DRQN'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
-
-
 
 
 def init_hidden():

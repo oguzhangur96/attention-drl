@@ -14,9 +14,9 @@ from Network import QNet_DARQN
 parser = argparse.ArgumentParser(description='PyTorch RL trainer')
 
 parser.add_argument('--train_max_step', default=4000000, type=int)
-parser.add_argument('--learning_rate', default=1e-4, type=float)
+parser.add_argument('--learning_rate', default=3e-4, type=float)
 parser.add_argument('--gamma', default=0.99, type=float)
-parser.add_argument('--buffer_capacity', default=500000, type=int)
+parser.add_argument('--buffer_capacity', default=200000, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--replay_start_size', default=50000, type=int)
 parser.add_argument('--final_exploration_step', default=100000, type=int)
@@ -26,32 +26,14 @@ parser.add_argument('--save_interval', default=10000, type=int)
 parser.add_argument('--model_path', default='./Models/Breakout_DARQN.model', type=str)
 parser.add_argument('--history_path', default='./Train_Historys/Breakout_DARQN', type=str)
 parser.add_argument('--epsilon_start', default=1, type=int)
-parser.add_argument('--epsilon_min', default=0.99, type=float)
+parser.add_argument('--epsilon_min', default=0.1, type=float)
 parser.add_argument('--model_save_every', default=1000, type=int)
 parser.add_argument('--load', default="False", type=str)
 
 args = parser.parse_args()
 
 # settings
-"""
-Train_max_step         = 4000000
-learning_rate          = 1e-4
-gamma                  = 0.99
-buffer_capacity        = 500000
-batch_size             = 32
-replay_start_size      = 50000
-final_exploration_step = 100000
-update_interval        = 10000 # target net
-update_frequency       = 4  # the number of actions selected by the agent between successive SGD updates
-save_interval          = 10000
-model_path = './Models/Breakout_DARQN.model'
-buffer_path = './Models/Breakout_DARQN.buffer'
-history_path = './Train_Historys/Breakout_DARQN'
-eval_history_path = './Train_Historys/eval_Breakout_DARQN'
 
-epsilon_start = 1
-epsilon_min = 0.1
-"""
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
