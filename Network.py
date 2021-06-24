@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
+from torch.nn.modules.linear import Linear 
 import torch.optim as optim
 from torch.distributions import Categorical
 from torch.autograd import Variable
@@ -92,7 +93,6 @@ class QNet_LSTM(nn.Module):
         conv_out_size = out_tensor.size()[-1]
         return conv_out_size
 
-
 class QNet_DARQN(nn.Module):
     def __init__(self):
         super(QNet_DARQN, self).__init__()
@@ -103,20 +103,29 @@ class QNet_DARQN(nn.Module):
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
 
         self.ConvOutSize = self.get_conv_out_size()
-        self.attention_h = nn.Linear(64,64,bias=False)
+        self.attention_h = nn.Sequential(nn.Linear(512,128,bias=False),
+                                        nn.ReLU(128),
+                                        nn.Linear(128,64, bias=False)
+                                        )
         # self.attention_xW = Variable(torch.randn((64),requires_grad=True)).to("cuda")
         # self.attention_xb = Variable(torch.randn((64), requires_grad=True)).to("cuda")
-        self.attention_linear_x = nn.Linear(64,64)
+        self.attention_linear_x = nn.Sequential(nn.Linear(64,64),
+                                                nn.ReLU(64),
+                                                nn.Linear(64,64)
+                                                )
+
         self.attention_linear_z = nn.Linear(64,64)
 
 
-        self.lstm = nn.LSTMCell(64, 64)
-        self.Q = nn.Linear(64, 4)
+        self.lstm = nn.LSTMCell(64, 512)
+        self.Q = nn.Sequential(nn.Linear(512, 64),
+                                nn.ReLU(64),
+                                nn.Linear(64,4)
+                                )
 
         self.initialize_weights()
 
     def forward(self, x, hidden):
-
         # CNN
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
@@ -146,15 +155,16 @@ class QNet_DARQN(nn.Module):
         #         out = z*chunk
         #     elif i > 0:
         #         out = torch.cat((out,z*chunk))
-        h_att = self.attention_h(hidden[0]).reshape(64) #64
+        h_att = self.attention_h(hidden[0])
         # print(f"h_att size = {h_att.size()}")
         x = x.reshape((64,49)) # 64 ,49
         x = x.T # 49 ,64
+        x_att = self.attention_linear_x(x)
         # print(f"x_1 size = {x.size()}") # 49, 64
         # print(f"x_2 size = {x.size()}")
-        z = F.tanh(self.attention_linear_x(x)+h_att) # (49,64) + (49,64) = (49,64)
+        z = torch.tanh(x_att+h_att) # (49,64) + (49,64) = (49,64)
         z = self.attention_linear_z(z) # (49,64)
-        z = F.softmax(z) # (49,64)
+        z = torch.softmax(z, dim=1) # (49,64)
         out = z*x # (49,64)
         # print(f"out size = {out.size()}")
         lstm_input = torch.sum(out,0) # 64
@@ -169,7 +179,8 @@ class QNet_DARQN(nn.Module):
         for module in self.modules():
             if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
                 nn.init.xavier_uniform_(module.weight)
-                nn.init.constant_(module.bias, 0)
+                if not module.bias == None:
+                    nn.init.constant_(module.bias, 0)
             elif isinstance(module, nn.LSTMCell):
                 nn.init.constant_(module.bias_ih, 0)
                 nn.init.constant_(module.bias_hh, 0)

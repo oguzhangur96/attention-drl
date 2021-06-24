@@ -78,7 +78,7 @@ def train(optimizer, behaviourNet, targetNet, s_batch, a_batch, r_batch, done_ba
 
 def main():
     env = CreateBreakout(stack=False)
-    buffer = ReplayBuffer(buffer_capacity)
+    buffer = ReplayBuffer('buffer_capacity')
     behaviourNet = QNet_LSTM().to(device)
     # behaviourNet.load_state_dict(torch.load(model_path))
     targetNet = QNet_LSTM().to(device)
