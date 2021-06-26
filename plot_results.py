@@ -2,18 +2,16 @@ import os
 import numpy as np
 import pandas as pd
 import glob
-from plotter import Plotter
+from matplotlib import pyplot as plt
+log_dir = "Train_Historys/"
 
-log_dir = "COMPLEX_MOV_RESULTS/"
-df_dict = {
-    "DRQN": [pd.DataFrame({"episodes": range(len(np.load(f"{log_dir}eval_Mario_DRQN.npy"))), "reward": np.load(f"{log_dir}eval_Mario_DRQN.npy")})],
-    "DARQN": [pd.DataFrame({"episodes": range(len(np.load(f"{log_dir}eval_Mario_DARQN.npy"))),
-                           "reward": np.load(f"{log_dir}eval_Mario_DARQN.npy")})],
-    "DCBAMRQN": [pd.DataFrame({"episodes": range(len(np.load(f"{log_dir}eval_Mario_DCBAMRQN.npy"))),
-                           "reward": np.load(f"{log_dir}eval_Mario_DCBAMRQN.npy")})],
-}
+drqn_rewards = np.load(f"{log_dir}Breakout_DRQN.npy")
+darqn_rewards = np.load(f"{log_dir}Breakout_DARQN.npy")
 
-print(df_dict["DCBAMRQN"][0])
+max_len = max(drqn_rewards.size,darqn_rewards.size)
 
-pltter = Plotter(df_dict)
-pltter()
+plt.plot(range(drqn_rewards.size), drqn_rewards, label = "DRQN Rewards")
+plt.plot(range(darqn_rewards.size), darqn_rewards, label = "DARQN Rewards")
+plt.legend()
+plt.show()
+
