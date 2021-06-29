@@ -8,46 +8,6 @@ from torch.autograd import Variable
 
 import numpy as np
 
-class QNet(nn.Module):
-    def __init__(self):
-        super(QNet, self).__init__()
-
-        # layers
-        self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-
-        self.ConvOutSize = self.get_conv_out_size()
-
-        self.fc = nn.Linear(self.ConvOutSize * self.ConvOutSize * 64, 512)
-
-        self.Q = nn.Linear(512, 5)
-
-        self.initialize_weights()
-    
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-
-        x = x.view(-1, self.ConvOutSize * self.ConvOutSize * 64)
-
-        x = F.relu(self.fc(x))
-        q = self.Q(x)
-        return q
-    
-    def initialize_weights(self):
-        for module in self.modules():
-            if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                nn.init.constant_(module.bias, 0)
-
-    def get_conv_out_size(self):
-        test_tensor = torch.FloatTensor(1, 4, 84, 84)
-        out_tensor = self.conv3(self.conv2(self.conv1(test_tensor)))
-        conv_out_size = out_tensor.size()[-1]
-        return conv_out_size
-
 class QNet_LSTM(nn.Module):
     def __init__(self):
         super(QNet_LSTM, self).__init__()
@@ -277,10 +237,8 @@ class SpatialGate(nn.Module):
         kernel_size = 7
         self.compress = ChannelPool()
         self.spatial = BasicConv(2, 1, kernel_size, stride=1, padding=(kernel_size - 1) // 2, relu=False)
-        # buraya bizim attentiona giren conv çıktısını vericez.
         self.lstm = nn.LSTMCell(729, 512)
         self.Q = nn.Linear(512, 12)
-        # forwarda da lstm kısmını vericez.
 
     def forward(self, x, hidden):
         x_compress = self.compress(x)
@@ -295,19 +253,3 @@ class SpatialGate(nn.Module):
         q = self.Q(h)
         return q, (h, c)
         # return x * scale
-
-
-class Qnet_DCBAMRQN(nn.Module):
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max']):
-        super(Qnet_DCBAMRQN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=5, stride=3)
-        self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types)
-        self.SpatialGate = SpatialGate()
-
-    def forward(self, x,hidden):
-        # print(x.size())
-        x_out = self.conv1(x)
-        # print(x_out.size())
-        x_out = self.ChannelGate(x_out)
-        x_out, hidden = self.SpatialGate(x_out,hidden)
-        return x_out, hidden

@@ -11,26 +11,25 @@ from Network import QNet_DARQN
 
 parser = argparse.ArgumentParser(description='PyTorch RL trainer')
 
-parser.add_argument('--train_max_step', default=4000000, type=int)
+parser.add_argument('--train_max_step', default=2000000, type=int)
 parser.add_argument('--learning_rate', default=3e-4, type=float)
 parser.add_argument('--gamma', default=0.99, type=float)
-parser.add_argument('--buffer_capacity', default=200000, type=int)
+parser.add_argument('--buffer_capacity', default=60000, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--replay_start_size', default=50000, type=int)
-parser.add_argument('--final_exploration_step', default=100000, type=int)
+parser.add_argument('--final_exploration_step', default=1000000, type=int)
 parser.add_argument('--update_interval', default=10000, type=int)
 parser.add_argument('--update_frequency', default=4, type=int)
-parser.add_argument('--save_interval', default=10000, type=int)
+parser.add_argument('--save_interval', default=50000, type=int)
+parser.add_argument('--print_every', default=10000, type=int)
 parser.add_argument('--model_path', default='./Models/Breakout_DARQN.model', type=str)
-parser.add_argument('--history_path', default='./Train_Historys/Breakout_DARQN', type=str)
+parser.add_argument('--param_path', default='./Models/parameters_DARQN.npy', type=str)
+parser.add_argument('--history_path', default='./Train_Historys/Breakout_DARQN.npy', type=str)
 parser.add_argument('--epsilon_start', default=1, type=int)
 parser.add_argument('--epsilon_min', default=0.1, type=float)
-parser.add_argument('--model_save_every', default=1000, type=int)
 parser.add_argument('--load', default="False", type=str)
 
 args = parser.parse_args()
-
-# settings
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -75,7 +74,6 @@ def train(optimizer, behaviourNet, targetNet, s_batch, a_batch, r_batch, done_ba
     loss.backward()
     optimizer.step()
 
-
 def main(args):
     env = CreateBreakout(stack=False)
     buffer = ReplayBuffer(args.buffer_capacity)
@@ -86,13 +84,21 @@ def main(args):
     optimizer = torch.optim.Adam(behaviourNet.parameters(), args.learning_rate)
 
     if args.load == "True":
+        
         behaviourNet.load_state_dict(torch.load(args.model_path))
         targetNet.load_state_dict(behaviourNet.state_dict())
+    
+    if args.load == "True":
+        train_history = list(np.load(args.history_path))
+        param_dict = np.load(args.param_path, allow_pickle='TRUE').item()
+        step = param_dict["step"]
+        print("weights and train_history loaded!")
+    else:
+        train_history = []
+        param_dict = {}
+        step = 0
 
     score_history = []
-    train_history = []
-
-    step = 0
     score = 0
 
     state = env.reset()
@@ -137,13 +143,17 @@ def main(args):
             targetNet.load_state_dict(behaviourNet.state_dict())
 
         if step > 0 and step % args.save_interval == 0:
+            param_dict["step"] = step
             train_history.append(mean(score_history))
             torch.save(behaviourNet.state_dict(), args.model_path)
+            np.save(args.param_path, param_dict)
             np.save(args.history_path, np.array(train_history))
 
+        if step > 0 and step % args.print_every == 0:
             print(f"Step No: {step}, Train average: {mean(score_history)}, epsilon: {epsilon}")
             
     torch.save(behaviourNet.state_dict(), args.model_path)
+    np.save(args.param_path, param_dict)
     np.save(args.history_path, np.array(train_history))
     print("Train end, avg_score of last 100 episode : {}".format(mean(score_history)))
 
