@@ -7,12 +7,7 @@ class ReplayBuffer:
         self.position = 0
 
     def push(self, transition):
-        """
-        push transition data to Beffer
 
-        input:
-          transition -- list of [s, a, r, t]
-        """
         if len(self.Buffer) < self.capacity:
             self.Buffer.append(None)
         self.Buffer[self.position] = transition
