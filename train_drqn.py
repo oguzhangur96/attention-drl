@@ -154,7 +154,7 @@ def main(args):
             print(f"Step No: {step}, Train average: {mean(score_history)}, epsilon: {epsilon}")
 
     torch.save(behaviourNet.state_dict(), args.model_path)
-    np.save(args.+param_path, param_dict)
+    np.save(args.param_path, param_dict)
     np.save(args.history_path, np.array(train_history))
     print("Train end, avg_score of last 100 episode : {}".format(mean(score_history)))
 
